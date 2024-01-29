@@ -573,8 +573,8 @@ const MenuContainer = () => {
             type: 'query',
             statement: `MATCH (n:AZRole {templateid:"62E90394-69F5-4237-9190-012177145E10"})
                 OPTIONAL MATCH (g:AZGroup)-[:AZHasRole]->(n)
-                OPTIONAL MATCH (i)-[:AZMemberOf]->(g) WHERE n:AZUser OR n:AZServicePrincipal OR n:AZDevice
-                OPTIONAL MATCH (p)-[:AZHasRole]->(n) WHERE n:AZUser OR n:AZServicePrincipal OR n:AZDevice
+                OPTIONAL MATCH (i)-[:AZMemberOf]->(g) WHERE i:AZUser OR i:AZServicePrincipal OR i:AZDevice
+                OPTIONAL MATCH (p)-[:AZHasRole]->(n) WHERE p:AZUser OR p:AZServicePrincipal OR p:AZDevice
                 CALL {
                     WITH g,i,p
                     SET g.highvalue=true, i.highvalue=true, p.highvalue=true
@@ -587,8 +587,8 @@ const MenuContainer = () => {
             type: 'query',
             statement: `MATCH (n:AZRole {templateid:"E8611AB8-C189-46E8-94E1-60213AB1F814"})
                 OPTIONAL MATCH (g:AZGroup)-[:AZHasRole]->(n)
-                OPTIONAL MATCH (i)-[:AZMemberOf]->(g) WHERE n:AZUser OR n:AZServicePrincipal OR n:AZDevice
-                OPTIONAL MATCH (p)-[:AZHasRole]->(n) WHERE n:AZUser OR n:AZServicePrincipal OR n:AZDevice
+                OPTIONAL MATCH (i)-[:AZMemberOf]->(g) WHERE i:AZUser OR i:AZServicePrincipal OR i:AZDevice
+                OPTIONAL MATCH (p)-[:AZHasRole]->(n) WHERE p:AZUser OR p:AZServicePrincipal OR p:AZDevice
                 CALL {
                     WITH g,i,p
                     SET g.highvalue=true, i.highvalue=true, p.highvalue=true
@@ -606,9 +606,15 @@ const MenuContainer = () => {
                         AzureLabels.ExecuteCommand,
                         AzureLabels.ResetPassword,
                         AzureLabels.AddMembers,
+                        AzureLabels.AddOwner,
                         AzureLabels.GlobalAdmin,
                         AzureLabels.PrivilegedAuthAdmin,
                         AzureLabels.PrivilegedRoleAdmin,
+                        AzureLabels.MGAddSecret,
+                        AzureLabels.MGAddOwner,
+                        AzureLabels.MGAddMember,
+                        AzureLabels.MGGrantAppRoles,
+                        AzureLabels.MGGrantRole
                     ].join('|'),
                     batchSize
                 ),
@@ -661,6 +667,7 @@ const MenuContainer = () => {
                         WITH at,n
                         MATCH (at)-[:AZContains]->(u:AZUser)
                         WHERE NOT (u)-[:AZHasRole]->()
+                        AND NOT (u)-[:AZMemberOf|AZOwns]->(:AZGroup {isassignabletorole: true})
                         CALL {
                             WITH n, u
                             MERGE (n)-[:AZResetPassword]->(u)
@@ -716,6 +723,7 @@ const MenuContainer = () => {
                 WITH COLLECT(NonTargets) AS NonTargets,at,AuthAdmin
                 MATCH (at)-[:AZContains]->(AuthAdminTargets:AZUser)-[:AZHasRole]->(arTargets)
                 WHERE NOT AuthAdminTargets IN NonTargets AND arTargets.templateid IN $AuthAdminTargetRoles
+                AND NOT (AuthAdminTargets)-[:AZMemberOf|AZOwns]->(:AZGroup {isassignabletorole: true})
                 CALL {
                     WITH AuthAdmin, AuthAdminTargets
                     MERGE (AuthAdmin)-[:AZResetPassword]->(AuthAdminTargets)
@@ -748,6 +756,7 @@ const MenuContainer = () => {
                 WITH COLLECT(NonTargets) AS NonTargets,at,HelpdeskAdmin
                 MATCH (at)-[:AZContains]->(HelpdeskAdminTargets:AZUser)-[:AZHasRole]->(arTargets)
                 WHERE NOT HelpdeskAdminTargets IN NonTargets AND arTargets.templateid IN $HelpdeskAdminTargetRoles
+                AND NOT (HelpdeskAdminTargets)-[:AZMemberOf|AZOwns]->(:AZGroup {isassignabletorole: true})
                 CALL {
                     WITH HelpdeskAdmin, HelpdeskAdminTargets
                     MERGE (HelpdeskAdmin)-[:AZResetPassword]->(HelpdeskAdminTargets)
@@ -779,6 +788,7 @@ const MenuContainer = () => {
                 WITH COLLECT(NonTargets) AS NonTargets,at,PasswordAdmin
                 MATCH (at)-[:AZContains]->(PasswordAdminTargets:AZUser)-[:AZHasRole]->(arTargets)
                 WHERE NOT PasswordAdminTargets IN NonTargets AND arTargets.templateid IN $PasswordAdminTargetRoles
+                AND NOT (PasswordAdminTargets)-[:AZMemberOf|AZOwns]->(:AZGroup {isassignabletorole: true})
                 CALL {
                     WITH PasswordAdmin, PasswordAdminTargets
                     MERGE (PasswordAdmin)-[:AZResetPassword]->(PasswordAdminTargets)
@@ -807,6 +817,7 @@ const MenuContainer = () => {
                 WITH COLLECT(NonTargets) AS NonTargets,at,UserAccountAdmin
                 MATCH (at)-[:AZContains]->(UserAccountAdminTargets:AZUser)-[:AZHasRole]->(arTargets)
                 WHERE NOT UserAccountAdminTargets IN NonTargets AND arTargets.templateid IN $UserAccountAdminTargetRoles
+                AND NOT (UserAccountAdminTargets)-[:AZMemberOf|AZOwns]->(:AZGroup {isassignabletorole: true})
                 CALL {
                     WITH UserAccountAdmin, UserAccountAdminTargets
                     MERGE (UserAccountAdmin)-[:AZResetPassword]->(UserAccountAdminTargets)
@@ -870,14 +881,24 @@ const MenuContainer = () => {
             statement: `MATCH (n)-[:AZHasRole]->(m)
                         WHERE m.templateid IN $addGroupMembersRoles
                         MATCH (at:AZTenant)-[:AZContains]->(n)
-                        MATCH (at)-[:AZContains]->(azg:AZGroup {isassignabletorole: false})
+                        MATCH (at)-[:AZContains]->(azg:AZGroup)
+                        WHERE azg.isassignabletorole IS null
+		        OR azg.isassignabletorole = false
                         CALL {
                             WITH n, azg
                             MERGE (n)-[:AZAddMembers]->(azg)
                         } IN TRANSACTIONS OF {} ROWS`.format(batchSize),
             params: {
                 addGroupMembersRoles: [
-                    'FDD7A751-B60B-444A-984C-02652FE8FA1C”, “62E90394-69F5-4237-9190-012177145E10”, “E8611AB8-C189-46E8-94E1-60213AB1F814”, “9360FEB5-F418-4BAA-8175-E2A00BAC4301”, “45D8D3C5-C802-45C6-B32A-1D70B5E1E86E”, “FE930BE7-5E62-47DB-91AF-98C3A49A38B1”, “3A2C62DB-5318-420D-8D74-23AFFEE5D9D5”, “B5A8DCF3-09D5-43A9-A639-8E29EF291470”, “744EC460-397E-42AD-A462-8B3F9747A02C',
+                    'FDD7A751-B60B-444A-984C-02652FE8FA1C',
+                    '62E90394-69F5-4237-9190-012177145E10',
+                    'E8611AB8-C189-46E8-94E1-60213AB1F814',
+                    '9360FEB5-F418-4BAA-8175-E2A00BAC4301',
+                    '45D8D3C5-C802-45C6-B32A-1D70B5E1E86E',
+                    'FE930BE7-5E62-47DB-91AF-98C3A49A38B1',
+                    '3A2C62DB-5318-420D-8D74-23AFFEE5D9D5',
+                    'B5A8DCF3-09D5-43A9-A639-8E29EF291470',
+                    '744EC460-397E-42AD-A462-8B3F9747A02C',
                 ],
             },
             log: (result) =>
@@ -953,6 +974,242 @@ const MenuContainer = () => {
             log: (result) =>
                 `Created ${result.summary.counters.updates().relationshipsCreated
                 } AZAddOwner Edges`,
+        },
+        {
+            step: 'createAZMGApplicationReadWriteAllEdges',
+            description:
+                'Service Principals with the Application.ReadWrite.All MS Graph app role can add owners and secrets to all other Service Principals and App Registrations in the same tenant.',
+            type: 'query',
+            statement: `MATCH (n:AZServicePrincipal)-[:AZMGApplication_ReadWrite_All]->(m:AZServicePrincipal)<-[:AZContains]-(t:AZTenant)
+                        MATCH (t)-[:AZContains]->(o)
+                        WHERE o:AZApp OR o:AZServicePrincipal
+                        CALL {
+                            WITH n,o
+                            MERGE (n)-[:AZMGAddSecret]->(o)
+                            MERGE (n)-[:AZMGAddOwner]->(o)
+                        } IN TRANSACTIONS OF {} ROWS`.format(batchSize),
+            params: null,
+            log: (result) =>
+                `Created ${
+                    result.summary.counters.updates().relationshipsCreated
+                } AZMGApplicationReadWriteAllEdges Edges`,
+        },
+        {
+            step: 'createAZMGAppRoleAssignmentReadWriteAllEdges',
+            description:
+                'Service Principals with the AppRoleAssignment.ReadWrite.All MS Graph app role can add MS Graph app role assignments to any Service Principal in the same tenant, including the RoleManagement.ReadWrite.Directory role, allowing escalation to Global Admin.',
+            type: 'query',
+            statement: `MATCH (n:AZServicePrincipal)-[:AZMGAppRoleAssignment_ReadWrite_All]->(m:AZServicePrincipal)<-[:AZContains]-(t:AZTenant)
+                        CALL {
+                            WITH n,t
+                            MERGE (n)-[:AZMGGrantAppRoles]->(t)
+                        } IN TRANSACTIONS OF {} ROWS`.format(batchSize),
+            params: null,
+            log: (result) =>
+                `Created ${
+                    result.summary.counters.updates().relationshipsCreated
+                } AZMGAppRoleAssignmentReadWriteAll Edges`,
+        },
+        {
+            step: 'createAZMGDirectoryReadWriteAllEdges',
+            description:
+                'Service Principals with the Directory.ReadWrite.All MS Graph app role can add owners or members to all non role eligible security groups in the same tenant.',
+            type: 'query',
+            statement: `MATCH (n:AZServicePrincipal)-[:AZMGDirectory_ReadWrite_All]->(m:AZServicePrincipal)<-[:AZContains]-(t:AZTenant)
+                        MATCH (t)-[:AZContains]->(g:AZGroup)
+                        WHERE g.isassignabletorole IS NULL
+                        CALL {
+                            WITH n,g
+                            MERGE (n)-[:AZMGAddMember]->(g)
+                            MERGE (n)-[:AZMGAddOwner]->(g)
+                        } IN TRANSACTIONS OF {} ROWS`.format(batchSize),
+            params: null,
+            log: (result) =>
+                `Created ${
+                    result.summary.counters.updates().relationshipsCreated
+                } AZMGDirectoryReadWriteAll Edges`,
+        },
+        {
+            step: 'createAZMGGroupReadWriteAllEdges',
+            description:
+                'Service Principals with the Group.ReadWrite.All MS Graph app role can add owners or members to all non role eligible security groups in the same tenant.',
+            type: 'query',
+            statement: `MATCH (n:AZServicePrincipal)-[:AZMGGroup_ReadWrite_All]->(m:AZServicePrincipal)<-[:AZContains]-(t:AZTenant)
+                        MATCH (t)-[:AZContains]->(g:AZGroup)
+                        WHERE g.isassignabletorole IS NULL
+                        CALL {
+                            WITH n,g
+                            MERGE (n)-[:AZMGAddMember]->(g)
+                            MERGE (n)-[:AZMGAddOwner]->(g)
+                        } IN TRANSACTIONS OF {} ROWS`.format(batchSize),
+            params: null,
+            log: (result) =>
+                `Created ${
+                    result.summary.counters.updates().relationshipsCreated
+                } AZMGGroupReadWriteAll Edges`,
+        },
+        {
+            step: 'createAZMGGroupMemberReadWriteAllEdges',
+            description:
+                'Service Principals with the GroupMember.ReadWrite.All MS Graph app role can add members to all non role eligible security groups in the same tenant.',
+            type: 'query',
+            statement: `MATCH (n:AZServicePrincipal)-[:AZMGGroupMember_ReadWrite_All]->(m:AZServicePrincipal)<-[:AZContains]-(t:AZTenant)
+                        MATCH (t)-[:AZContains]->(g:AZGroup)
+                        WHERE g.isassignabletorole IS NULL
+                        CALL {
+                            WITH n,g
+                            MERGE (n)-[:AZMGAddMember]->(g)
+                        } IN TRANSACTIONS OF {} ROWS`.format(batchSize),
+            params: null,
+            log: (result) =>
+                `Created ${
+                    result.summary.counters.updates().relationshipsCreated
+                } AZMGGroupMemberReadWriteAll Edges`,
+        },
+        {
+            step: 'createAZMGRoleManagementReadWriteDirectoryEdgesPart1',
+            description:
+                `Service Principals with the RoleManagement.ReadWrite.Directory MS Graph app role can:
+                    Grant all AzureAD admin roles, including Global Administrator
+                    Grant all MS Graph app roles
+                    Add secrets to any Service Principal in the same tenant
+                    Add owners to any Service Principal in the same tenant
+                    Add secrets to any App Registation in the same tenant
+                    Add owners to any App Registration in the same tenant
+                    Add owners to any Group in the same tenant
+                    Add members to any Group in the same tenant`,
+            type: 'query',
+            statement: `MATCH (n:AZServicePrincipal)-[:AZMGRoleManagement_ReadWrite_Directory]->(m:AZServicePrincipal)<-[:AZContains]-(t:AZTenant)
+                        MATCH (t)-[:AZContains]->(r:AZRole)
+                        CALL {
+                            WITH n,t
+                            MERGE (n)-[:AZMGGrantAppRoles]->(t)
+                        } IN TRANSACTIONS OF {} ROWS`.format(batchSize),
+            params: null,
+            log: (result) =>
+                `Created ${
+                    result.summary.counters.updates().relationshipsCreated
+                } AZMGRoleManagementReadWriteDirectoryPart1 Edges`,
+        },
+        {
+            step: 'createAZMGRoleManagementReadWriteDirectoryEdgesPart2',
+            description:
+                `Service Principals with the RoleManagement.ReadWrite.Directory MS Graph app role can:
+                    Grant all AzureAD admin roles, including Global Administrator
+                    Grant all MS Graph app roles
+                    Add secrets to any Service Principal in the same tenant
+                    Add owners to any Service Principal in the same tenant
+                    Add secrets to any App Registation in the same tenant
+                    Add owners to any App Registration in the same tenant
+                    Add owners to any Group in the same tenant
+                    Add members to any Group in the same tenant`,
+            type: 'query',
+            statement: `MATCH (n:AZServicePrincipal)-[:AZMGRoleManagement_ReadWrite_Directory]->(m:AZServicePrincipal)<-[:AZContains]-(t:AZTenant)
+                        MATCH (t)-[:AZContains]->(r:AZRole)
+                        CALL {
+                            WITH n,r
+                            MERGE (n)-[:AZMGGrantRole]->(r)
+                        } IN TRANSACTIONS OF {} ROWS`.format(batchSize),
+            params: null,
+            log: (result) =>
+                `Created ${
+                    result.summary.counters.updates().relationshipsCreated
+                } AZMGRoleManagementReadWriteDirectoryPart2 Edges`,
+        },
+        {
+            step: 'createAZMGRoleManagementReadWriteDirectoryEdgesPart3',
+            description:
+                `Service Principals with the RoleManagement.ReadWrite.Directory MS Graph app role can:
+                    Grant all AzureAD admin roles, including Global Administrator
+                    Grant all MS Graph app roles
+                    Add secrets to any Service Principal in the same tenant
+                    Add owners to any Service Principal in the same tenant
+                    Add secrets to any App Registation in the same tenant
+                    Add owners to any App Registration in the same tenant
+                    Add owners to any Group in the same tenant
+                    Add members to any Group in the same tenant`,
+            type: 'query',
+            statement: `MATCH (n:AZServicePrincipal)-[:AZMGRoleManagement_ReadWrite_Directory]->(m:AZServicePrincipal)<-[:AZContains]-(t:AZTenant)
+                        MATCH (t)-[:AZContains]->(s:AZServicePrincipal)
+                        CALL {
+                            WITH n,s
+                            MERGE (n)-[:AZMGAddSecret]->(s)
+                            MERGE (n)-[:AZMGAddOwner]->(s)
+                        } IN TRANSACTIONS OF {} ROWS`.format(batchSize),
+            params: null,
+            log: (result) =>
+                `Created ${
+                    result.summary.counters.updates().relationshipsCreated
+                } AZMGRoleManagementReadWriteDirectoryPart3 Edges`,
+        },
+        {
+            step: 'createAZMGRoleManagementReadWriteDirectoryEdgesPart4',
+            description:
+                `Service Principals with the RoleManagement.ReadWrite.Directory MS Graph app role can:
+                    Grant all AzureAD admin roles, including Global Administrator
+                    Grant all MS Graph app roles
+                    Add secrets to any Service Principal in the same tenant
+                    Add owners to any Service Principal in the same tenant
+                    Add secrets to any App Registation in the same tenant
+                    Add owners to any App Registration in the same tenant
+                    Add owners to any Group in the same tenant
+                    Add members to any Group in the same tenant`,
+            type: 'query',
+            statement: `MATCH (n:AZServicePrincipal)-[:AZMGRoleManagement_ReadWrite_Directory]->(m:AZServicePrincipal)<-[:AZContains]-(t:AZTenant)
+                        MATCH (t)-[:AZContains]->(a:AZApp)
+                        CALL {
+                            WITH n,a
+                            MERGE (n)-[:AZMGAddSecret]->(a)
+                            MERGE (n)-[:AZMGAddOwner]->(a)
+                        } IN TRANSACTIONS OF {} ROWS`.format(batchSize),
+            params: null,
+            log: (result) =>
+                `Created ${
+                    result.summary.counters.updates().relationshipsCreated
+                } AZMGRoleManagementReadWriteDirectoryPart4 Edges`,
+        },
+        {
+            step: 'createAZMGRoleManagementReadWriteDirectoryEdgesPart5',
+            description:
+                `Service Principals with the RoleManagement.ReadWrite.Directory MS Graph app role can:
+                    Grant all AzureAD admin roles, including Global Administrator
+                    Grant all MS Graph app roles
+                    Add secrets to any Service Principal in the same tenant
+                    Add owners to any Service Principal in the same tenant
+                    Add secrets to any App Registation in the same tenant
+                    Add owners to any App Registration in the same tenant
+                    Add owners to any Group in the same tenant
+                    Add members to any Group in the same tenant`,
+            type: 'query',
+            statement: `MATCH (n:AZServicePrincipal)-[:AZMGRoleManagement_ReadWrite_Directory]->(m:AZServicePrincipal)<-[:AZContains]-(t:AZTenant)
+                        MATCH (t)-[:AZContains]->(g:AZGroup)
+                        CALL {
+                            WITH n,g
+                            MERGE (n)-[:AZMGAddOwner]->(g)
+                            MERGE (n)-[:AZMGAddMember]->(g)
+                        } IN TRANSACTIONS OF {} ROWS`.format(batchSize),
+            params: null,
+            log: (result) =>
+                `Created ${
+                    result.summary.counters.updates().relationshipsCreated
+                } AZMGRoleManagementReadWriteDirectoryPart5 Edges`,
+        },
+        {
+            step: 'createAZMGServicePrincipalEndpointReadWriteAllEdges',
+            description:
+                'Service Principals with the ServicePrincipalEndpoint.ReadWrite.All MS Graph app role can add owners to all other Service Principals in the same tenant.',
+            type: 'query',
+            statement: `MATCH (n:AZServicePrincipal)-[:AZMGServicePrincipalEndpoint_ReadWrite_All]->(m:AZServicePrincipal)<-[:AZContains]-(t:AZTenant)
+                        MATCH (t)-[:AZContains]->(s:AZServicePrincipal)
+                        CALL {
+                            WITH n,s
+                            MERGE (n)-[:AZMGAddOwner]->(s)
+                        } IN TRANSACTIONS OF {} ROWS`.format(batchSize),
+            params: null,
+            log: (result) =>
+                `Created ${
+                    result.summary.counters.updates().relationshipsCreated
+                } AZMGServicePrincipalEndpointReadWriteAll Edges`,
         },
     ];
 

@@ -1,8 +1,19 @@
+.. note::
+   This documentation applies to Legacy BloodHound and is no longer maintained.
+
+   See up-to-date documentation for BloodHound CE here: `Install BloodHound Community Edition with Docker Compose`_
+
+.. _Install BloodHound Community Edition with Docker Compose: https://support.bloodhoundenterprise.io/hc/en-us/articles/17468450058267
+
 macOS
 =====
 
 Install neo4j
 ^^^^^^^^^^^^^
+
+.. Warning::
+
+  Neo4j 5 suffers from severe performance regression issues. Until further notice, please use Neo4j 4.4.13
 
 1. Download the macOS version of neo4j Community Edition Server from https://neo4j.com/download-center/#community. **Do not install from brew.**
 
@@ -53,7 +64,7 @@ Alternative: Build the BloodHound GUI
 ::
 
    $ npm install
-Build BloodHound with `npm run build:linux`:
+Build BloodHound with `npm run build:macos`:
 
 ::
 

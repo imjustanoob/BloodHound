@@ -61,7 +61,8 @@ const EdgeFilter = ({ open }) => {
                             'AddSelf',
                             'AddAllowedToAct',
                             'DCSync',
-                            'SyncLAPSPassword'
+                            'SyncLAPSPassword',
+                            'WriteAccountRestrictions',
                         ]}
                         sectionName='ACL'
                     />
@@ -79,6 +80,7 @@ const EdgeFilter = ({ open }) => {
                     <EdgeFilterCheck name='WriteSPN' />
                     <EdgeFilterCheck name='AddSelf' />
                     <EdgeFilterCheck name='AddAllowedToAct' />
+                    <EdgeFilterCheck name='WriteAccountRestrictions' />
                     <EdgeFilterCheck name='DCSync' />
                     <EdgeFilterCheck name='SyncLAPSPassword' />
                     <EdgeFilterSection
@@ -99,6 +101,7 @@ const EdgeFilter = ({ open }) => {
                             'AllowedToAct',
                             'SQLAdmin',
                             'HasSIDHistory',
+                            'DumpSMSAPassword',
                         ]}
                     />
                     <EdgeFilterCheck name='CanRDP' />
@@ -123,6 +126,7 @@ const EdgeFilter = ({ open }) => {
                     <EdgeFilterCheck name='AutoEnroll' />
                     <EdgeFilterCheck name='ManageCa' />
                     <EdgeFilterCheck name='ManageCertificates' />
+                    <EdgeFilterCheck name='DumpSMSAPassword' />
                 </div>
                 <div>
                     <EdgeFilterSection
@@ -136,7 +140,6 @@ const EdgeFilter = ({ open }) => {
                             'AZGetSecrets',
                             'AZHasRole',
                             'AZMemberOf',
-                            'AZOwner',
                             'AZRunsAs',
                             'AZVMContributor',
                             'AZVMAdminLogin',
@@ -145,18 +148,20 @@ const EdgeFilter = ({ open }) => {
                             'AZExecuteCommand',
                             'AZGlobalAdmin',
                             'AZPrivilegedAuthAdmin',
-                            'AZGrant',
-                            'AZGrantSelf',
                             'AZPrivilegedRoleAdmin',
                             'AZResetPassword',
                             'AZUserAccessAdministrator',
                             'AZOwns',
-                            'AZScopedTo',
                             'AZCloudAppAdmin',
                             'AZAppAdmin',
                             'AZAddOwner',
                             'AZManagedIdentity',
                             'AZKeyVaultContributor',
+                            'AZNodeResourceGroup',
+                            'AZWebsiteContributor',
+                            'AZLogicAppContributor',
+                            'AZAutomationContributor',
+                            'AZAKSContributor',
                         ]}
                         sectionName='azure'
                     />
@@ -168,7 +173,6 @@ const EdgeFilter = ({ open }) => {
                     <EdgeFilterCheck name='AZGetSecrets' />
                     <EdgeFilterCheck name='AZHasRole' />
                     <EdgeFilterCheck name='AZMemberOf' />
-                    <EdgeFilterCheck name='AZOwner' />
                     <EdgeFilterCheck name='AZRunsAs' />
                     <EdgeFilterCheck name='AZVMContributor' />
                     <EdgeFilterCheck name='AZVMAdminLogin' />
@@ -177,18 +181,38 @@ const EdgeFilter = ({ open }) => {
                     <EdgeFilterCheck name='AZExecuteCommand' />
                     <EdgeFilterCheck name='AZGlobalAdmin' />
                     <EdgeFilterCheck name='AZPrivilegedAuthAdmin' />
-                    <EdgeFilterCheck name='AZGrant' />
-                    <EdgeFilterCheck name='AZGrantSelf' />
                     <EdgeFilterCheck name='AZPrivilegedRoleAdmin' />
                     <EdgeFilterCheck name='AZResetPassword' />
                     <EdgeFilterCheck name='AZUserAccessAdministrator' />
                     <EdgeFilterCheck name='AZOwns' />
-                    <EdgeFilterCheck name='AZScopedTo' />
                     <EdgeFilterCheck name='AZCloudAppAdmin' />
                     <EdgeFilterCheck name='AZAppAdmin' />
                     <EdgeFilterCheck name='AZAddOwner' />
                     <EdgeFilterCheck name='AZManagedIdentity' />
                     <EdgeFilterCheck name='AZKeyVaultContributor' />
+                    <EdgeFilterCheck name='AZNodeResourceGroup' />
+                    <EdgeFilterCheck name='AZWebsiteContributor' />
+                    <EdgeFilterCheck name='AZLogicAppContributor' />
+                    <EdgeFilterCheck name='AZAutomationContributor' />
+                    <EdgeFilterCheck name='AZAKSContributor' />
+                </div>
+                <div>
+                    <EdgeFilterSection
+                        title='MS Graph App Roles'
+                        edges={[
+                            'AZMGAddSecret',
+                            'AZMGAddOwner',
+                            'AZMGAddMember',
+                            'AZMGGrantAppRoles',
+                            'AZMGGrantRole',
+                        ]}
+                        sectionName='msgraphapproles'
+                    />
+                    <EdgeFilterCheck name='AZMGAddSecret' />
+                    <EdgeFilterCheck name='AZMGAddOwner' />
+                    <EdgeFilterCheck name='AZMGAddMember' />
+                    <EdgeFilterCheck name='AZMGGrantAppRoles' />
+                    <EdgeFilterCheck name='AZMGGrantRole' />
                 </div>
             </div>
         </motion.div>

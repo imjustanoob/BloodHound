@@ -220,6 +220,48 @@ global.appStore = {
                 scale: 1.25,
                 color: '#B18FCF',
             },
+            AZContainerRegistry: {
+                font: "'Font Awesome 5 Free'",
+                content: '\uf49e',
+                scale: 1.25,
+                color: '#0885D7',
+            },
+            AZAutomationAccount: {
+                font: "'Font Awesome 5 Free'",
+                content: '\uf085',
+                scale: 1.25,
+                color: '#F4BA44',
+            },
+            AZLogicApp: {
+                font: "'Font Awesome 5 Free'",
+                content: '\uf0e8',
+                scale: 1.25,
+                color: '#9EE047',
+            },
+            AZFunctionApp: {
+                font: "'Font Awesome 5 Free'",
+                content: '\uf0e7',
+                scale: 1.25,
+                color: '#F4BA44',
+            },
+            AZWebApp: {
+                font: "'Font Awesome 5 Free'",
+                content: '\uf247',
+                scale: 1.25,
+                color: '#4696E9',
+            },
+            AZManagedCluster: {
+                font: "'Font Awesome 5 Free'",
+                content: '\uf1b3',
+                scale: 1.25,
+                color: '#326CE5',
+            },
+            AZVMScaleSet: {
+                font: "'Font Awesome 5 Free'",
+                content: '\uf233',
+                scale: 1.25,
+                color: '#007CD0',
+            },
             AZKeyVault: {
                 font: "'Font Awesome 5 Free'",
                 content: '\uf023',
@@ -277,6 +319,7 @@ global.appStore = {
             WriteSPN: 'tapered',
             AddKeyCredentialLink: 'tapered',
             SyncLAPSPassword: 'tapered',
+            DumpSMSAPassword: 'tapered',
         },
     },
     lowResPalette: {
@@ -318,6 +361,7 @@ global.appStore = {
             HasSIDHistory: 'line',
             CanPSRemote: 'line',
             SyncLAPSPassword: 'line',
+            DumpSMSAPassword: 'line',
         },
     },
     highResStyle: {
@@ -411,11 +455,23 @@ if (typeof conf.get('edgeincluded') === 'undefined') {
         GPLink: true,
         AddAllowedToAct: true,
         AllowedToAct: true,
+        WriteAccountRestrictions: true,
         SQLAdmin: true,
         ReadGMSAPassword: true,
         HasSIDHistory: true,
         CanPSRemote: true,
         SyncLAPSPassword: true,
+        DumpSMSAPassword: true,
+        AZMGGrantRole: true,
+        AZMGAddSecret: true,
+        AZMGAddOwner: true,
+        AZMGAddMember: true,
+        AZMGGrantAppRoles: true,
+        AZNodeResourceGroup: true,
+        AZWebsiteContributor: true,
+        AZLogicAppContributo: true,
+        AZAutomationContributor: true,
+        AZAKSContributor: true,
     });
 }
 
